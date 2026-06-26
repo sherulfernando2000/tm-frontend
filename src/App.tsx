@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { Toaster } from "react-hot-toast"
 import SignupPage from "./pages/SignupPage"
 import LoginPage from "./pages/LoginPage"
+import { DashboardLayout } from "./layout/DashboardLayout"
 
 function App() {
   return (
@@ -12,6 +13,8 @@ function App() {
       <Routes>
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={<DashboardLayout />} />
+
         
         <Route path="*" element={<Navigate to="/signup" replace />} />
       </Routes>
