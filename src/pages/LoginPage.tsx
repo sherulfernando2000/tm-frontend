@@ -1,13 +1,34 @@
 import React, { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { login as loginService } from "../services/authService"
+import { useAuth } from "../context/AuthContext"
+import toast from "react-hot-toast"
+import axios from "axios"
 
 const LoginPage = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Login submitted", { email, password })
+    setIsLoading(true)
+    try {
+      const response = await loginService({ email, password })
+      login(response.user, response.accessToken)
+      toast.success("Logged in successfully!")
+      navigate("/dashboard")
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || error.message)
+      } else {
+        toast.error("Invalid email or password")
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -28,6 +49,7 @@ const LoginPage = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-gray-300 rounded-full py-2 px-4 outline-none focus:border-blue-500 transition-colors"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -40,14 +62,16 @@ const LoginPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-gray-300 rounded-full py-2 px-4 outline-none focus:border-blue-500 transition-colors"
                 required
+                disabled={isLoading}
               />
             </div>
 
             <button
               type="submit"
-              className="mt-4 w-full py-3 bg-black text-white font-semibold rounded-full hover:opacity-90 transition-opacity"
+              disabled={isLoading}
+              className="mt-4 w-full py-3 bg-black text-white font-semibold rounded-full hover:opacity-90 transition-opacity disabled:opacity-70"
             >
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
