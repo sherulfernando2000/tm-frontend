@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
-// import { signUp } from "../services/authService";
+import { signUp } from "../services/authService";
 
 interface FormData {
   fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
+  companyName: string;
 }
 
 interface FormErrors {
@@ -16,6 +17,7 @@ interface FormErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  companyName?: string;
 }
 
 const SignupPage = () => {
@@ -25,12 +27,14 @@ const SignupPage = () => {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
   const [isNameFocused, setIsNameFocused] = useState(false);
+  const [isCompanyFocused, setIsCompanyFocused] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
+    companyName: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +58,11 @@ const SignupPage = () => {
     // Full name validation
     if (!formData.fullName.trim()) {
       newErrors.fullName = "Full name is required";
+    }
+
+    // Company validation
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = "Company/Workspace name is required";
     }
 
     // Email validation
@@ -88,15 +97,13 @@ const SignupPage = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-       
-        // const response = await signUp({
-        //     name: formData.fullName,
-        //     email: formData.email,
-        //     password: formData.password,
-        //   });
+        await signUp({
+          name: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          companyName: formData.companyName,
+        });
         toast.success('Account created successfully!');
-        // localStorage.setItem('token', response.token);
-        // console.log(response.name)
         navigate("/login");
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -204,6 +211,73 @@ const SignupPage = () => {
               {errors.fullName && submitted && (
                 <div className="text-red-500 text-xs mt-1 text-left pl-6 w-full">
                   {errors.fullName}
+                </div>
+              )}
+            </div>
+
+            <div className="w-full mt-4">
+              <div
+                className={`flex items-center w-full bg-transparent border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-black/60 ${
+                  errors.companyName && submitted
+                    ? "border-red-500"
+                    : isCompanyFocused
+                    ? "border-black/60 bg-gray-50"
+                    : "border-gray-300/60"
+                }`}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3 21H21"
+                    stroke="#6B7280"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M5 21V5C5 4.44772 5.44772 4 6 4H18C18.5523 4 19 4.44772 19 5V21"
+                    stroke="#6B7280"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M9 9H11"
+                    stroke="#6B7280"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M9 13H11"
+                    stroke="#6B7280"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M13 9H15"
+                    stroke="#6B7280"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M13 13H15"
+                    stroke="#6B7280"
+                    strokeWidth="2"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  name="companyName"
+                  placeholder="Company / Workspace Name"
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  onFocus={() => setIsCompanyFocused(true)}
+                  onBlur={() => setIsCompanyFocused(false)}
+                  className="bg-transparent text-black/80 placeholder-gray-500/80 outline-none text-sm w-full h-full"
+                />
+              </div>
+              {errors.companyName && submitted && (
+                <div className="text-red-500 text-xs mt-1 text-left pl-6 w-full">
+                  {errors.companyName}
                 </div>
               )}
             </div>
