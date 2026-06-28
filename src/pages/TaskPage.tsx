@@ -38,6 +38,7 @@ import {
   Pencil,
   Trash2,
   X,
+  Eye,
 } from "lucide-react"
 
 // Types matching Backend Task model + UI extensions
@@ -133,6 +134,7 @@ const MOCK_USERS: UserRef[] = [
 export default function TaskPage() {
   const { user: currentUser } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
+  const isAdmin = currentUser?.role === "Admin"
 
   // Data States
   const [tasks, setTasks] = useState<Task[]>([])
@@ -140,10 +142,11 @@ export default function TaskPage() {
   
   // Selection / Filter States
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
-  const [activeTab, setActiveTab] = useState<"All" | "Done" | "Backlog">("All")
+  const [activeTab, setActiveTab] = useState<"All" | "Done">("All")
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("All")
   const [priorityFilter, setPriorityFilter] = useState<string>("All")
+  const [viewingTaskDetails, setViewingTaskDetails] = useState<Task | null>(null)
   
   // Sheet Form States
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -205,13 +208,12 @@ export default function TaskPage() {
     setIsSheetOpen(true)
   }
 
-  // Trigger quick create sheet when search param ?create=true is present
   useEffect(() => {
-    if (searchParams.get("create") === "true") {
+    if (searchParams.get("create") === "true" && isAdmin) {
       handleOpenCreateSheet()
       setSearchParams({}, { replace: true })
     }
-  }, [searchParams])
+  }, [searchParams, isAdmin])
 
   // Open sheet for task editing
   const handleOpenEditSheet = () => {
@@ -366,7 +368,6 @@ export default function TaskPage() {
 
     // Filter by tab
     if (activeTab === "Done" && task.status !== "Done") return false
-    if (activeTab === "Backlog" && task.status !== "Open") return false
 
     // Filter by search query
     if (searchQuery.trim() !== "") {
@@ -446,7 +447,7 @@ export default function TaskPage() {
         
         {/* Custom Segmented Tabs Container */}
         <div className="flex items-center bg-gray-100/80 p-1 rounded-full border border-gray-200">
-          {(["All", "Done", "Backlog"] as const).map((tab) => (
+          {(["All", "Done"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => {
@@ -466,7 +467,7 @@ export default function TaskPage() {
       </div>
 
       {/* Control bar */}
-      <div className="flex justify-between items-center gap-4 mb-6">
+      <div className="flex justify-between items-end gap-4 mb-6">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
@@ -479,29 +480,35 @@ export default function TaskPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "All")}>
-            <SelectTrigger className="w-[140px] border-gray-200 rounded-full h-10 text-gray-600 text-sm focus-visible:ring-1 focus-visible:ring-gray-300">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-100">
-              <SelectItem value="All">All Statuses</SelectItem>
-              <SelectItem value="Open">To do</SelectItem>
-              <SelectItem value="In Progress">In progress</SelectItem>
-              <SelectItem value="Done">Done</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-gray-500 ml-1">Status</span>
+            <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "All")}>
+              <SelectTrigger className="w-[140px] border-gray-200 rounded-full h-10 text-gray-600 text-sm focus-visible:ring-1 focus-visible:ring-gray-300">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-100">
+                <SelectItem value="All">All Statuses</SelectItem>
+                <SelectItem value="Open">To do</SelectItem>
+                <SelectItem value="In Progress">In progress</SelectItem>
+                <SelectItem value="Done">Done</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={priorityFilter} onValueChange={(val) => setPriorityFilter(val || "All")}>
-            <SelectTrigger className="w-[140px] border-gray-200 rounded-full h-10 text-gray-600 text-sm focus-visible:ring-1 focus-visible:ring-gray-300">
-              <SelectValue placeholder="All Priority" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-100">
-              <SelectItem value="All">All Priorities</SelectItem>
-              <SelectItem value="Low">Low</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="High">High</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-gray-500 ml-1">Priority</span>
+            <Select value={priorityFilter} onValueChange={(val) => setPriorityFilter(val || "All")}>
+              <SelectTrigger className="w-[140px] border-gray-200 rounded-full h-10 text-gray-600 text-sm focus-visible:ring-1 focus-visible:ring-gray-300">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-100">
+                <SelectItem value="All">All Priorities</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -511,11 +518,13 @@ export default function TaskPage() {
           <TableHeader className="bg-gray-50/50">
             <TableRow className="hover:bg-transparent border-gray-100">
               <TableHead className="w-12 text-center">
-                <Checkbox
-                  checked={filteredTasks.length > 0 && selectedTaskIds.length === filteredTasks.length}
-                  onCheckedChange={handleToggleAll}
-                  className="rounded border-gray-300 data-[state=checked]:bg-black data-[state=checked]:border-black"
-                />
+                {isAdmin && (
+                  <Checkbox
+                    checked={filteredTasks.length > 0 && selectedTaskIds.length === filteredTasks.length}
+                    onCheckedChange={handleToggleAll}
+                    className="rounded border-gray-300 data-[state=checked]:bg-black data-[state=checked]:border-black"
+                  />
+                )}
               </TableHead>
               <TableHead className="font-semibold text-gray-500 text-sm">Key</TableHead>
               <TableHead className="font-semibold text-gray-500 text-sm">Name</TableHead>
@@ -523,13 +532,16 @@ export default function TaskPage() {
               <TableHead className="font-semibold text-gray-500 text-sm">Assignee</TableHead>
               <TableHead className="font-semibold text-gray-500 text-sm">Due date</TableHead>
               <TableHead className="font-semibold text-gray-500 text-sm">Priority</TableHead>
+              <TableHead className="font-semibold text-gray-500 text-sm text-center w-24">Actions</TableHead>
               <TableHead className="w-12 text-right">
-                <button
-                  onClick={handleOpenCreateSheet}
-                  className="w-7 h-7 inline-flex items-center justify-center bg-black hover:opacity-90 text-white rounded-full transition-opacity shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={handleOpenCreateSheet}
+                    className="w-7 h-7 inline-flex items-center justify-center bg-black hover:opacity-90 text-white rounded-full transition-opacity shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -546,16 +558,25 @@ export default function TaskPage() {
                 return (
                   <TableRow
                     key={task._id}
-                    className={`border-gray-100 transition-colors ${
+                    onClick={() => {
+                      if (isAdmin) {
+                        handleToggleRow(task._id)
+                      } else {
+                        setViewingTaskDetails(task)
+                      }
+                    }}
+                    className={`border-gray-100 transition-colors cursor-pointer ${
                       isSelected ? "bg-gray-50/30" : "hover:bg-gray-50/10"
                     }`}
                   >
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => handleToggleRow(task._id)}
-                        className="rounded border-gray-300 data-[state=checked]:bg-black data-[state=checked]:border-black"
-                      />
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      {isAdmin && (
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleToggleRow(task._id)}
+                          className="rounded border-gray-300 data-[state=checked]:bg-black data-[state=checked]:border-black"
+                        />
+                      )}
                     </TableCell>
                     <TableCell className="font-medium text-gray-900 text-sm">{task.key}</TableCell>
                     <TableCell className="text-gray-900 font-medium text-sm">{task.title}</TableCell>
@@ -582,6 +603,17 @@ export default function TaskPage() {
                       {formatDueDate(task.dueDate)}
                     </TableCell>
                     <TableCell>{renderPriority(task.priority)}</TableCell>
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold rounded-full border-gray-200 text-gray-500 hover:text-black hover:bg-gray-50/50 transition-colors flex items-center gap-1 mx-auto"
+                        onClick={() => setViewingTaskDetails(task)}
+                      >
+                        <Eye className="w-3.5 h-3.5 text-gray-400" />
+                        <span>View</span>
+                      </Button>
+                    </TableCell>
                     <TableCell className="text-right"></TableCell>
                   </TableRow>
                 )
@@ -748,6 +780,81 @@ export default function TaskPage() {
               </Button>
             </SheetFooter>
           </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* View Task Details Sheet */}
+      <Sheet open={viewingTaskDetails !== null} onOpenChange={(open) => { if (!open) setViewingTaskDetails(null) }}>
+        <SheetContent className="sm:max-w-md bg-white border-l border-gray-100 shadow-xl overflow-y-auto">
+          <SheetHeader className="mb-6 px-6 pt-6 border-b border-gray-50 pb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-400 tracking-wider uppercase">
+                {viewingTaskDetails?.key}
+              </span>
+              {viewingTaskDetails && renderStatusBadge(viewingTaskDetails.status)}
+            </div>
+            <SheetTitle className="text-2xl font-bold text-gray-900 mt-2">
+              {viewingTaskDetails?.title}
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="flex flex-col gap-6 px-6 py-2">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-gray-500">Description</span>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50/50 border border-gray-100/50 p-4 rounded-xl leading-relaxed">
+                {viewingTaskDetails?.description || "No description provided for this task."}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-gray-500">Priority</span>
+                <div className="mt-1">
+                  {viewingTaskDetails && renderPriority(viewingTaskDetails.priority)}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-gray-500">Due Date</span>
+                <span className="text-sm font-medium text-gray-800 mt-1.5 flex items-center gap-1.5">
+                  <Clock className="w-4.5 h-4.5 text-gray-400" />
+                  {viewingTaskDetails ? formatDueDate(viewingTaskDetails.dueDate) : ""}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 border-t border-gray-50 pt-4">
+              <span className="text-xs font-semibold text-gray-500">Assignee</span>
+              <div className="flex items-center gap-3 mt-1.5">
+                <Avatar className="w-8 h-8 border border-white">
+                  <AvatarFallback className="bg-gray-100 text-gray-700 text-xs font-semibold">
+                    {viewingTaskDetails?.assignedTo?.name
+                      ? viewingTaskDetails.assignedTo.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
+                      : "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-800">
+                    {viewingTaskDetails?.assignedTo?.name || "Unassigned"}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {viewingTaskDetails?.assignedTo?.email || ""}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter className="mt-8 flex flex-row gap-3 justify-end px-6 border-t border-gray-50 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setViewingTaskDetails(null)}
+              className="border-gray-200 rounded-full h-11 px-6 font-semibold"
+            >
+              Close Details
+            </Button>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
     </div>

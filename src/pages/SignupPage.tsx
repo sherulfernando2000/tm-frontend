@@ -159,13 +159,13 @@ const SignupPage = () => {
             onSubmit={handleSubmit}
             className="md:w-96 w-80 flex flex-col items-center justify-center"
           >
-            <img src="booklogo.jpeg" alt="" className='w-15 h-15' />
+            
             <h1 className="text-2xl md:text-2xl font-bold text-blue-800">
               CREATE ACCOUNT
             </h1>
 
             <p className="text-sm text-gray-500/90 mt-3">
-              Join our community of book lovers
+             
             </p>
 
             <div className="w-full mt-6">
