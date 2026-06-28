@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"
-import api from "../services/api"
+import { useAuth } from "../context/AuthContext"
+import * as taskService from "../services/taskService"
 import toast from "react-hot-toast"
 import {
   Table,
@@ -130,6 +131,8 @@ const MOCK_USERS: UserRef[] = [
 ]
 
 export default function TaskPage() {
+  const { user: currentUser } = useAuth()
+
   // Data States
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<UserRef[]>(MOCK_USERS)
@@ -157,10 +160,10 @@ export default function TaskPage() {
 
   const fetchTasks = async () => {
     try {
-      const response = await api.get("/tasks")
-      if (response.data && response.data.length > 0) {
+      const data = await taskService.getTasks()
+      if (data && data.length > 0) {
         // Map backend responses to include keys
-        const mapped = response.data.map((t: any, index: number) => ({
+        const mapped = data.map((t: any, index: number) => ({
           ...t,
           key: t.key || `TSK-${index + 1}`,
           dueDate: t.dueDate ? t.dueDate.split("T")[0] : "",
@@ -177,9 +180,9 @@ export default function TaskPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await api.get("/users/workspace-members")
-      if (response.data && response.data.length > 0) {
-        setUsers(response.data)
+      const data = await taskService.getWorkspaceMembers()
+      if (data && data.length > 0) {
+        setUsers(data)
       }
     } catch (err) {
       console.log("Could not load workspace users, using default assignees.", err)
@@ -236,22 +239,22 @@ export default function TaskPage() {
     try {
       if (editingTask) {
         // Edit Task
-        const response = await api.put(`/tasks/${editingTask._id}`, payload)
+        const data = await taskService.updateTask(editingTask._id, payload)
         const updatedTask: Task = {
-          ...response.data,
+          ...data,
           key: editingTask.key,
-          dueDate: response.data.dueDate ? response.data.dueDate.split("T")[0] : "",
+          dueDate: data.dueDate ? data.dueDate.split("T")[0] : "",
           assignedTo: users.find((u) => u._id === formAssignedTo),
         }
         setTasks(tasks.map((t) => (t._id === editingTask._id ? updatedTask : t)))
         toast.success("Task updated successfully")
       } else {
         // Create Task
-        const response = await api.post("/tasks", payload)
+        const data = await taskService.createTask(payload)
         const newTask: Task = {
-          ...response.data,
+          ...data,
           key: `TSK-${tasks.length + 1}`,
-          dueDate: response.data.dueDate ? response.data.dueDate.split("T")[0] : "",
+          dueDate: data.dueDate ? data.dueDate.split("T")[0] : "",
           assignedTo: users.find((u) => u._id === formAssignedTo),
         }
         setTasks([newTask, ...tasks])
@@ -278,6 +281,7 @@ export default function TaskPage() {
           return t
         })
         setTasks(updatedTasks)
+        setFormAssignedTo("")
         toast.success("Local task updated")
       } else {
         const newTask: Task = {
@@ -305,7 +309,7 @@ export default function TaskPage() {
 
     try {
       // Loop over and delete API calls
-      await Promise.all(selectedTaskIds.map((id) => api.delete(`/tasks/${id}`)))
+      await Promise.all(selectedTaskIds.map((id) => taskService.deleteTask(id)))
       setTasks(tasks.filter((t) => !selectedTaskIds.includes(t._id)))
       toast.success(`${originalCount} task(s) deleted`)
     } catch (err) {
@@ -336,6 +340,13 @@ export default function TaskPage() {
 
   // Filter & Search Logic
   const filteredTasks = tasks.filter((task) => {
+    // Role isolation: non-admins can only see their own tasks (assigned to them or created by them)
+    if (currentUser?.role !== "Admin" && currentUser !== null) {
+      const isAssigned = task.assignedTo?._id === currentUser._id
+      const isCreated = task.createdBy?._id === currentUser._id
+      if (!isAssigned && !isCreated) return false
+    }
+
     // Filter by tab
     if (activeTab === "Done" && task.status !== "Done") return false
     if (activeTab === "Backlog" && task.status !== "Open") return false

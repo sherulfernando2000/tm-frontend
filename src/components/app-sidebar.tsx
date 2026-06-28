@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useAuth } from "@/context/AuthContext"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -15,11 +16,6 @@ import {
   LayoutDashboardIcon,
   ListIcon,
   UsersIcon,
-  CameraIcon,
-  FileTextIcon,
-  DatabaseIcon,
-  FileChartColumnIcon,
-  FileIcon,
   CommandIcon,
 } from "lucide-react"
 
@@ -58,6 +54,12 @@ const data = {
   
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth()
+  
+  const filteredNavMain = user?.role === "Admin"
+    ? data.navMain
+    : data.navMain.filter(item => item.title !== "Users")
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -74,8 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-    
+        <NavMain items={filteredNavMain} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

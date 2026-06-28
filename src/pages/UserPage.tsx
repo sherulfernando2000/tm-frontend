@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import api from "../services/api"
+import * as userService from "../services/userService"
 import toast from "react-hot-toast"
 import {
   Table,
@@ -125,9 +125,9 @@ export default function UserPage() {
 
   const fetchWorkspaceUsers = async () => {
     try {
-      const response = await api.get("/users/workspace-members")
-      if (response.data && response.data.length > 0) {
-        setUsers(response.data)
+      const data = await userService.getWorkspaceMembers()
+      if (data && data.length > 0) {
+        setUsers(data)
       } else {
         setUsers(INITIAL_MOCK_USERS)
       }
@@ -153,8 +153,8 @@ export default function UserPage() {
     }
 
     try {
-      const response = await api.post("/users/add-member", payload)
-      const newMember: UserMember = response.data.user
+      const data = await userService.addMember(payload)
+      const newMember: UserMember = data.user
       setUsers([newMember, ...users])
       toast.success("Team member successfully added")
       
@@ -209,7 +209,7 @@ export default function UserPage() {
     }
 
     try {
-      await api.put("/users/change-password", payload)
+      await userService.changePassword(payload)
       toast.success("Password changed successfully")
       
       // Reset form
@@ -236,7 +236,7 @@ export default function UserPage() {
     }
 
     try {
-      await Promise.all(targetIds.map((id) => api.delete(`/users/remove-member/${id}`)))
+      await Promise.all(targetIds.map((id) => userService.removeMember(id)))
       setUsers(users.filter((u) => !targetIds.includes(u._id)))
       toast.success(`${targetIds.length} member(s) successfully removed`)
     } catch (err) {
