@@ -322,7 +322,87 @@ export default function UserPage() {
   }
 
   // Determine if active user is administrator
-  const isAdmin = currentUser?.role === "Admin" || currentUser === null // If not parsed, default to true for interactive visual fidelity
+  const isAdmin = currentUser?.role === "Admin"
+
+  if (currentUser === null) {
+    return (
+      <div className="flex w-full min-h-screen items-center justify-center">
+        <p className="text-sm text-gray-400">Loading user configuration...</p>
+      </div>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="relative w-full min-h-screen bg-white p-8 flex items-center justify-center">
+        <div className="w-full max-w-md border border-gray-100 rounded-2xl p-8 shadow-sm">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+              <ShieldAlert className="w-8 h-8 text-black" />
+              <span>Change Password</span>
+            </h1>
+            <p className="text-sm text-gray-500 mt-2">
+              Update your workspace user credentials. Please ensure it is a strong, secure password.
+            </p>
+          </div>
+
+          <form onSubmit={handleChangePassword} className="flex flex-col gap-5 py-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-semibold text-gray-700">Current Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="pl-10 border-gray-200 rounded-lg outline-none focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:border-gray-300 h-11"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-semibold text-gray-700">New Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pl-10 border-gray-200 rounded-lg outline-none focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:border-gray-300 h-11"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-semibold text-gray-700">Confirm New Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="pl-10 border-gray-200 rounded-lg outline-none focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:border-gray-300 h-11"
+                  required
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="bg-black hover:opacity-90 text-white rounded-full h-11 w-full mt-6 font-semibold shadow-sm"
+            >
+              Update Password
+            </Button>
+          </form>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative w-full min-h-screen bg-white p-8">
@@ -499,7 +579,7 @@ export default function UserPage() {
       {/* Sheet Drawer: Add Team Member */}
       <Sheet open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
         <SheetContent className="sm:max-w-md bg-white border-l border-gray-100 shadow-xl overflow-y-auto">
-          <SheetHeader className="mb-6">
+          <SheetHeader className="mb-6 px-6 pt-6">
             <SheetTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <UserIcon className="w-6 h-6 text-black" />
               <span>Add Member</span>
@@ -509,7 +589,7 @@ export default function UserPage() {
             </SheetDescription>
           </SheetHeader>
 
-          <form onSubmit={handleAddMember} className="flex flex-col gap-5 py-2">
+          <form onSubmit={handleAddMember} className="flex flex-col gap-5 px-6 py-4">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-gray-700">Full Name</label>
               <div className="relative">
@@ -578,7 +658,7 @@ export default function UserPage() {
       {/* Sheet Drawer: Change Password */}
       <Sheet open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
         <SheetContent className="sm:max-w-md bg-white border-l border-gray-100 shadow-xl overflow-y-auto">
-          <SheetHeader className="mb-6">
+          <SheetHeader className="mb-6 px-6 pt-6">
             <SheetTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <ShieldAlert className="w-6 h-6 text-black" />
               <span>Change Password</span>
@@ -588,7 +668,7 @@ export default function UserPage() {
             </SheetDescription>
           </SheetHeader>
 
-          <form onSubmit={handleChangePassword} className="flex flex-col gap-5 py-2">
+          <form onSubmit={handleChangePassword} className="flex flex-col gap-5 px-6 py-4">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-gray-700">Current Password</label>
               <div className="relative">

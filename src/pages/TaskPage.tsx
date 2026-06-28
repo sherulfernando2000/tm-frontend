@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import * as taskService from "../services/taskService"
 import toast from "react-hot-toast"
@@ -32,7 +33,6 @@ import {
 } from "@/components/ui/select"
 import {
   Search,
-  SlidersHorizontal,
   Plus,
   Clock,
   Pencil,
@@ -132,6 +132,7 @@ const MOCK_USERS: UserRef[] = [
 
 export default function TaskPage() {
   const { user: currentUser } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // Data States
   const [tasks, setTasks] = useState<Task[]>([])
@@ -141,6 +142,8 @@ export default function TaskPage() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState<"All" | "Done" | "Backlog">("All")
   const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("All")
+  const [priorityFilter, setPriorityFilter] = useState<string>("All")
   
   // Sheet Form States
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -201,6 +204,14 @@ export default function TaskPage() {
     setFormAssignedTo(users[0]?._id || "")
     setIsSheetOpen(true)
   }
+
+  // Trigger quick create sheet when search param ?create=true is present
+  useEffect(() => {
+    if (searchParams.get("create") === "true") {
+      handleOpenCreateSheet()
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams])
 
   // Open sheet for task editing
   const handleOpenEditSheet = () => {
@@ -347,6 +358,12 @@ export default function TaskPage() {
       if (!isAssigned && !isCreated) return false
     }
 
+    // Filter by status filter dropdown select options
+    if (statusFilter !== "All" && task.status !== statusFilter) return false
+
+    // Filter by priority filter dropdown select options
+    if (priorityFilter !== "All" && task.priority !== priorityFilter) return false
+
     // Filter by tab
     if (activeTab === "Done" && task.status !== "Done") return false
     if (activeTab === "Backlog" && task.status !== "Open") return false
@@ -461,10 +478,31 @@ export default function TaskPage() {
           />
         </div>
 
-        <Button variant="outline" className="flex items-center gap-2 border-gray-200 text-gray-600 rounded-full h-10 px-4">
-          <SlidersHorizontal className="w-4 h-4 text-gray-500" />
-          <span>Filter</span>
-        </Button>
+        <div className="flex items-center gap-3">
+          <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "All")}>
+            <SelectTrigger className="w-[140px] border-gray-200 rounded-full h-10 text-gray-600 text-sm focus-visible:ring-1 focus-visible:ring-gray-300">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border border-gray-100">
+              <SelectItem value="All">All Statuses</SelectItem>
+              <SelectItem value="Open">To do</SelectItem>
+              <SelectItem value="In Progress">In progress</SelectItem>
+              <SelectItem value="Done">Done</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={priorityFilter} onValueChange={(val) => setPriorityFilter(val || "All")}>
+            <SelectTrigger className="w-[140px] border-gray-200 rounded-full h-10 text-gray-600 text-sm focus-visible:ring-1 focus-visible:ring-gray-300">
+              <SelectValue placeholder="All Priority" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border border-gray-100">
+              <SelectItem value="All">All Priorities</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Task table Container */}
@@ -593,7 +631,7 @@ export default function TaskPage() {
       {/* Create / Edit Drawer Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="sm:max-w-md bg-white border-l border-gray-100 shadow-xl overflow-y-auto">
-          <SheetHeader className="mb-6">
+          <SheetHeader className="mb-6 px-6 pt-6">
             <SheetTitle className="text-2xl font-bold text-gray-900">
               {editingTask ? "Edit Task" : "Create New Task"}
             </SheetTitle>
@@ -604,7 +642,7 @@ export default function TaskPage() {
             </SheetDescription>
           </SheetHeader>
 
-          <form onSubmit={handleSubmitTask} className="flex flex-col gap-5 py-2">
+          <form onSubmit={handleSubmitTask} className="flex flex-col gap-5 px-6 py-4">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-gray-700">Task Name</label>
               <Input
