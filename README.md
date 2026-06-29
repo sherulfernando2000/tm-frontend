@@ -10,6 +10,21 @@ A premium, visually-stunning task management dashboard frontend built with React
 * **Interactive Modals**: Seamless drawer overlays for task creation/editing and details inspection.
 * **Single Page App Routing**: Smooth navigation with `react-router-dom`, fully optimized for page refreshes.
 
+### 📦 Dependencies
+* **Core Dependencies**:
+  * `react` & `react-dom` (user interface library)
+  * `react-router-dom` (client-side page router)
+  * `axios` (API endpoint client communication)
+  * `lucide-react` (SVG icons package)
+  * `@base-ui/react` (Radix primitive select/dropdown boxes)
+  * `react-hot-toast` & `sonner` (toast toast alerts)
+* **Styling Tools**:
+  * `tailwindcss` (utility styling styling framework)
+  * `postcss` & `autoprefixer` (CSS compilation configurations)
+* **Build & Dev Tooling**:
+  * `vite` (bundler engine)
+  * `typescript` (TS type safety)
+
 ---
 
 ## ⚙️ Environment Variables
