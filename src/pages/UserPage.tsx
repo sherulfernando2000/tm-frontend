@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/sheet"
 import {
   Search,
-  SlidersHorizontal,
   Plus,
   Trash2,
   X,
@@ -458,10 +457,7 @@ export default function UserPage() {
           />
         </div>
 
-        <Button variant="outline" className="flex items-center gap-2 border-gray-200 text-gray-600 rounded-full h-10 px-4">
-          <SlidersHorizontal className="w-4 h-4 text-gray-500" />
-          <span>Filter</span>
-        </Button>
+
       </div>
 
       {/* User table Container */}
