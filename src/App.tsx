@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage"
 import { DashboardLayout } from "./layout/DashboardLayout"
 import TaskPage from "./pages/TaskPage"
 import UserPage from "./pages/UserPage"
+import OverviewPage from "./pages/OverviewPage"
 
 function App() {
   return (
@@ -14,7 +15,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Navigate to="tasks" replace />} />
+          <Route index element={<OverviewPage />} />
           <Route path="tasks" element={<TaskPage />} />
           <Route path="users" element={<UserPage />} />
         </Route>
