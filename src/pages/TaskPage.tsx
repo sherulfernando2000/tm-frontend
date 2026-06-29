@@ -162,7 +162,7 @@ export default function TaskPage() {
   useEffect(() => {
     fetchTasks()
     fetchUsers()
-  }, [])
+  }, [isAdmin])
 
   const fetchTasks = async () => {
     try {
@@ -176,11 +176,11 @@ export default function TaskPage() {
         }))
         setTasks(mapped)
       } else {
-        setTasks(INITIAL_MOCK_TASKS)
+        setTasks(isAdmin ? [] : INITIAL_MOCK_TASKS)
       }
     } catch (err) {
       console.log("Could not load backend tasks, falling back to mock data.", err)
-      setTasks(INITIAL_MOCK_TASKS)
+      setTasks(isAdmin ? [] : INITIAL_MOCK_TASKS)
     }
   }
 
@@ -740,7 +740,12 @@ export default function TaskPage() {
                 onValueChange={(val) => setFormAssignedTo(val || "")}
               >
                 <SelectTrigger className="border-gray-200 rounded-lg">
-                  <SelectValue placeholder="Select Assignee" />
+                  <SelectValue placeholder="Select Assignee">
+                    {formAssignedTo
+                      ? (users.find((u) => u._id === formAssignedTo)?.name ||
+                         (editingTask?.assignedTo?._id === formAssignedTo ? editingTask.assignedTo.name : formAssignedTo))
+                      : "Select Assignee"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-100">
                   {users.map((user) => (
